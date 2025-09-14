@@ -1,0 +1,82 @@
+Firebase config: 
+{projectId: 'channel-points-d2dd8', authDomain: 'channel-points-d2dd8.firebaseapp.com', hasApiKey: true, hasAppId: true}
+authDomain
+: 
+"channel-points-d2dd8.firebaseapp.com"
+hasApiKey
+: 
+true
+hasAppId
+: 
+true
+projectId
+: 
+"channel-points-d2dd8"
+[[Prototype]]
+: 
+Object
+index-CZjSP7DY.js:1612 Auth state changed: User signed in
+index-CZjSP7DY.js:1612 Firebase user details: 
+{uid: 'khFlNYSopqWzInBkA8OnlfhQzvj1', email: 'ewer.david@gmail.com', displayName: 'David Ewer'}
+dashboard:1 Access to fetch at 'https://0fcf04b4-ca17-4bd2-9e9f-28767ae1dec3-00-3rzl653kiaiv1.janeway.replit.dev/api/user/profile' from origin 'https://stream-points-dewerwork.replit.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-CZjSP7DY.js:1612 
+ GET https://0fcf04b4-ca17-4bd2-9e9f-28767ae1dec3-00-3rzl653kiaiv1.janeway.replit.dev/api/user/profile net::ERR_FAILED
+o	@	index-CZjSP7DY.js:1612
+await in o		
+(anonymous)	@	index-CZjSP7DY.js:1612
+(anonymous)	@	index-CZjSP7DY.js:827
+Promise.then		
+registerStateListener	@	index-CZjSP7DY.js:827
+onAuthStateChanged	@	index-CZjSP7DY.js:827
+Ek	@	index-CZjSP7DY.js:1052
+(anonymous)	@	index-CZjSP7DY.js:1612
+xc	@	index-CZjSP7DY.js:40
+Vs	@	index-CZjSP7DY.js:40
+Fm	@	index-CZjSP7DY.js:40
+Ar	@	index-CZjSP7DY.js:38
+j_	@	index-CZjSP7DY.js:40
+$r	@	index-CZjSP7DY.js:40
+kw	@	index-CZjSP7DY.js:40
+_	@	index-CZjSP7DY.js:25
+O	@	index-CZjSP7DY.js:25
+index-CZjSP7DY.js:1612 Error fetching user from backend: TypeError: Failed to fetch
+    at o (index-CZjSP7DY.js:1612:58095)
+    at async index-CZjSP7DY.js:1612:57733
+o	@	index-CZjSP7DY.js:1612
+await in o		
+(anonymous)	@	index-CZjSP7DY.js:1612
+(anonymous)	@	index-CZjSP7DY.js:827
+Promise.then		
+registerStateListener	@	index-CZjSP7DY.js:827
+onAuthStateChanged	@	index-CZjSP7DY.js:827
+Ek	@	index-CZjSP7DY.js:1052
+(anonymous)	@	index-CZjSP7DY.js:1612
+xc	@	index-CZjSP7DY.js:40
+Vs	@	index-CZjSP7DY.js:40
+Fm	@	index-CZjSP7DY.js:40
+Ar	@	index-CZjSP7DY.js:38
+j_	@	index-CZjSP7DY.js:40
+$r	@	index-CZjSP7DY.js:40
+kw	@	index-CZjSP7DY.js:40
+_	@	index-CZjSP7DY.js:25
+O	@	index-CZjSP7DY.js:25
+index-CZjSP7DY.js:1612 Error fetching user data: TypeError: Failed to fetch
+    at o (index-CZjSP7DY.js:1612:58095)
+    at async index-CZjSP7DY.js:1612:57733
+(anonymous)	@	index-CZjSP7DY.js:1612
+await in (anonymous)		
+(anonymous)	@	index-CZjSP7DY.js:827
+Promise.then		
+registerStateListener	@	index-CZjSP7DY.js:827
+onAuthStateChanged	@	index-CZjSP7DY.js:827
+Ek	@	index-CZjSP7DY.js:1052
+(anonymous)	@	index-CZjSP7DY.js:1612
+xc	@	index-CZjSP7DY.js:40
+Vs	@	index-CZjSP7DY.js:40
+Fm	@	index-CZjSP7DY.js:40
+Ar	@	index-CZjSP7DY.js:38
+j_	@	index-CZjSP7DY.js:40
+$r	@	index-CZjSP7DY.js:40
+kw	@	index-CZjSP7DY.js:40
+_	@	index-CZjSP7DY.js:25
+O	@	index-CZjSP7DY.js:25

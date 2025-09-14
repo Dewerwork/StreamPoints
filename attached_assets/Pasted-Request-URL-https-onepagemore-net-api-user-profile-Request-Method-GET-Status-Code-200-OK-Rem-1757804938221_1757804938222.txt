@@ -1,0 +1,72 @@
+Request URL
+https://onepagemore.net/api/user/profile
+Request Method
+GET
+Status Code
+200 OK
+Remote Address
+34.111.179.208:443
+Referrer Policy
+strict-origin-when-cross-origin
+accept-ranges
+bytes
+alt-svc
+h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+cache-control
+public, max-age=0
+content-length
+2440
+content-type
+text/html; charset=UTF-8
+date
+Sat, 13 Sep 2025 23:06:30 GMT
+etag
+W/"988-199452bc728"
+last-modified
+Sat, 13 Sep 2025 22:22:01 GMT
+strict-transport-security
+max-age=63072000; includeSubDomains
+via
+1.1 google
+x-powered-by
+Express
+:authority
+onepagemore.net
+:method
+GET
+:path
+/api/user/profile
+:scheme
+https
+accept
+*/*
+accept-encoding
+gzip, deflate, br, zstd
+accept-language
+en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7
+authorization
+Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImUzZWU3ZTAyOGUzODg1YTM0NWNlMDcwNTVmODQ2ODYyMjU1YTcwNDYiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiRGF2aWQgRXdlciIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJNVUydC1BMjBPZEpCQ2k3QVgtSl9FbmZLU3FWZW5mcnhZVmxyamJhN3MtTnFOWlE9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vY2hhbm5lbC1wb2ludHMtZDJkZDgiLCJhdWQiOiJjaGFubmVsLXBvaW50cy1kMmRkOCIsImF1dGhfdGltZSI6MTc1NzgwNDc3OSwidXNlcl9pZCI6ImtoRmxOWVNvcHFXekluQmtBOE9ubGZoUXp2ajEiLCJzdWIiOiJraEZsTllTb3BxV3pJbkJrQThPbmxmaFF6dmoxIiwiaWF0IjoxNzU3ODA0Nzc5LCJleHAiOjE3NTc4MDgzNzksImVtYWlsIjoiZXdlci5kYXZpZEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJnb29nbGUuY29tIjpbIjEwMzM2Njc5ODk5OTg4ODM2MTUyNCJdLCJlbWFpbCI6WyJld2VyLmRhdmlkQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6Imdvb2dsZS5jb20ifX0.JvGmEYOee7URQOMwgXYt8U_f_YkWXvyUgsGjgV6DA1_D4-REGnPG4g-a1oz3kn2HcdvpeUjRINTQa67AzyEONuNZLT8CATx57r9mTjyoRUR4W-rTvtH7zOzyLo3ekp9FbZaBcsA5J08d5FIUqzt9FiBKfSxXDDY9Y0OaXjREMqRcMbNEHEbajyT0yjQw4Lao0w4pKfGJrp03P-QSQKmE4wFo53W1ka5G2tfrSsZ88oleEcb5obqJtRJ-6myorr2l4wqHHM5rZDNpB6fVRQpk8aQvOgd1Vk4mOrRrh8tShaVk-vkgZdfu4V3cwx8Cb1bqOFziXQRSoVmu8dsSYB4gOw
+cache-control
+no-cache
+content-type
+application/json
+pragma
+no-cache
+priority
+u=1, i
+referer
+https://onepagemore.net/dashboard
+sec-ch-ua
+"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"
+sec-ch-ua-mobile
+?0
+sec-ch-ua-platform
+"Windows"
+sec-fetch-dest
+empty
+sec-fetch-mode
+cors
+sec-fetch-site
+same-origin
+user-agent
+Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
