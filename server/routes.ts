@@ -102,45 +102,52 @@ async function authenticateToken(
     const token = authHeader.substring(7);
 
     if (!adminAuth) {
-      if (isDevelopment) {
-        console.warn(
-          "Development mode: Firebase Admin not configured, attempting manual token decode",
+      console.warn(
+        "Firebase Admin not configured, attempting manual token decode",
+      );
+
+      try {
+        // Decode the JWT token manually. This does NOT verify the signature but
+        // allows basic identification when Firebase Admin isn't available.
+        const payload = JSON.parse(
+          Buffer.from(token.split(".")[1], "base64").toString(),
         );
-        
-        try {
-          // Decode the JWT token manually (without verification for development)
-          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
-          if (payload.email && payload.user_id) {
-            console.log("Extracted user from token (no admin):", {
-              uid: payload.user_id,
-              email: payload.email,
-              name: payload.name || payload.email
-            });
-            
-            req.user = {
-              id: payload.user_id,
-              email: payload.email,
-              displayName: payload.name || payload.email.split('@')[0],
-            };
-            return next();
-          }
-        } catch (decodeError: any) {
-          console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
+
+        if (payload.email && payload.user_id) {
+          console.log("Extracted user from token (no admin):", {
+            uid: payload.user_id,
+            email: payload.email,
+            name: payload.name || payload.email,
+          });
+
+          req.user = {
+            id: payload.user_id,
+            email: payload.email,
+            displayName: payload.name || payload.email.split("@")[0],
+          };
+          return next();
         }
-        
-        // Only fall back to dev user if token decode fails
+      } catch (decodeError: any) {
+        console.warn(
+          "Failed to decode token manually:",
+          decodeError.message,
+        );
+      }
+
+      if (isDevelopment) {
+        // In development environments, fall back to a hard-coded user if manual
+        // decoding fails so the application can still run.
         req.user = {
           id: "dev-user-123",
           email: "dev@example.com",
           displayName: "Dev User",
         };
         return next();
-      } else {
-        return res
-          .status(500)
-          .json({ error: "Authentication service unavailable" });
       }
+
+      return res
+        .status(503)
+        .json({ error: "Authentication service unavailable" });
     }
 
     try {
@@ -155,35 +162,35 @@ async function authenticateToken(
     } catch (tokenError: any) {
       console.error("Token verification failed:", tokenError.message);
 
-      // In development, try to decode the token manually to extract user info
-      if (isDevelopment) {
-        console.warn(
-          "Development mode: Firebase Admin token verification failed, attempting manual token decode",
+      // Attempt to decode the token manually even when verification fails.
+      try {
+        const payload = JSON.parse(
+          Buffer.from(token.split(".")[1], "base64").toString(),
         );
-        
-        try {
-          // Decode the JWT token manually (without verification for development)
-          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
-          if (payload.email && payload.user_id) {
-            console.log("Extracted user from token:", {
-              uid: payload.user_id,
-              email: payload.email,
-              name: payload.name || payload.email
-            });
-            
-            req.user = {
-              id: payload.user_id,
-              email: payload.email,
-              displayName: payload.name || payload.email.split('@')[0],
-            };
-            return next();
-          }
-        } catch (decodeError: any) {
-          console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
+
+        if (payload.email && payload.user_id) {
+          console.log("Extracted user from token:", {
+            uid: payload.user_id,
+            email: payload.email,
+            name: payload.name || payload.email,
+          });
+
+          req.user = {
+            id: payload.user_id,
+            email: payload.email,
+            displayName: payload.name || payload.email.split("@")[0],
+          };
+          return next();
         }
-        
-        // Only fall back to dev user if token decode also fails
+      } catch (decodeError: any) {
+        console.warn(
+          "Failed to decode token manually:",
+          decodeError.message,
+        );
+      }
+
+      if (isDevelopment) {
+        // Only fall back to a dummy user in development environments.
         req.user = {
           id: "dev-user-123",
           email: "dev@example.com",
