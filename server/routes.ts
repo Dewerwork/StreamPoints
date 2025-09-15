@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { storage } from "./storage";
 import { db } from "./db";
 import {
@@ -62,12 +63,12 @@ async function initializeFirebaseAdmin() {
       console.log("Firebase Admin initialized successfully");
     } else {
       console.warn(
-        "Firebase Admin environment variables not found. Authentication will be bypassed in development.",
+        "Firebase Admin environment variables not found. Falling back to JWKS verification.",
       );
     }
   } catch (error) {
     console.error("Failed to initialize Firebase Admin:", error);
-    console.warn("Authentication will be bypassed in development.");
+    console.warn("Falling back to JWKS verification.");
   }
 }
 
@@ -82,8 +83,11 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-// Check if we're in development environment
-const isDevelopment = process.env.NODE_ENV !== "production";
+const JWKS = createRemoteJWKSet(
+  new URL(
+    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
+  ),
+);
 
 // Middleware to authenticate Firebase ID tokens
 async function authenticateToken(
@@ -101,108 +105,51 @@ async function authenticateToken(
 
     const token = authHeader.substring(7);
 
-    if (!adminAuth) {
-      console.warn(
-        "Firebase Admin not configured, attempting manual token decode",
-      );
-
+    if (adminAuth) {
       try {
-        // Decode the JWT token manually. This does NOT verify the signature but
-        // allows basic identification when Firebase Admin isn't available.
-        const payload = JSON.parse(
-          Buffer.from(token.split(".")[1], "base64").toString(),
-        );
-
-        if (payload.email && payload.user_id) {
-          console.log("Extracted user from token (no admin):", {
-            uid: payload.user_id,
-            email: payload.email,
-            name: payload.name || payload.email,
-          });
-
-          req.user = {
-            id: payload.user_id,
-            email: payload.email,
-            displayName: payload.name || payload.email.split("@")[0],
-          };
-          return next();
-        }
-      } catch (decodeError: any) {
-        console.warn(
-          "Failed to decode token manually:",
-          decodeError.message,
-        );
-      }
-
-      if (isDevelopment) {
-        // In development environments, fall back to a hard-coded user if manual
-        // decoding fails so the application can still run.
+        const decodedToken = await adminAuth.verifyIdToken(token, true); // checkRevoked = true
         req.user = {
-          id: "dev-user-123",
-          email: "dev@example.com",
-          displayName: "Dev User",
+          id: decodedToken.uid,
+          email: decodedToken.email || "",
+          displayName: decodedToken.name || "Unknown User",
         };
-        return next();
-      }
 
+        return next();
+      } catch (tokenError: any) {
+        console.error("Token verification failed:", tokenError.message);
+        return res
+          .status(401)
+          .json({ error: "Invalid or expired authentication token" });
+      }
+    }
+
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    if (!projectId) {
       return res
         .status(503)
-        .json({ error: "Authentication service unavailable" });
+        .json({ error: "FIREBASE_PROJECT_ID not configured" });
     }
 
     try {
-      const decodedToken = await adminAuth.verifyIdToken(token, true); // checkRevoked = true
+      const { payload } = await jwtVerify(token, JWKS, {
+        issuer: `https://securetoken.google.com/${projectId}`,
+        audience: projectId,
+      });
+
       req.user = {
-        id: decodedToken.uid,
-        email: decodedToken.email || "",
-        displayName: decodedToken.name || "Unknown User",
+        id: payload.user_id as string,
+        email: (payload.email as string) || "",
+        displayName:
+          (payload.name as string) ||
+          ((payload.email as string)?.split("@")[0] ?? "Unknown User"),
       };
 
-      next();
-    } catch (tokenError: any) {
-      console.error("Token verification failed:", tokenError.message);
-
-      // Attempt to decode the token manually even when verification fails.
-      try {
-        const payload = JSON.parse(
-          Buffer.from(token.split(".")[1], "base64").toString(),
-        );
-
-        if (payload.email && payload.user_id) {
-          console.log("Extracted user from token:", {
-            uid: payload.user_id,
-            email: payload.email,
-            name: payload.name || payload.email,
-          });
-
-          req.user = {
-            id: payload.user_id,
-            email: payload.email,
-            displayName: payload.name || payload.email.split("@")[0],
-          };
-          return next();
-        }
-      } catch (decodeError: any) {
-        console.warn(
-          "Failed to decode token manually:",
-          decodeError.message,
-        );
-      }
-
-      if (isDevelopment) {
-        // Only fall back to a dummy user in development environments.
-        req.user = {
-          id: "dev-user-123",
-          email: "dev@example.com",
-          displayName: "Dev User",
-        };
-        return next();
-      }
-
-      return res.status(401).json({
-        error: "Invalid or expired authentication token",
-        code: tokenError.code || "auth/invalid-token",
-      });
+      return next();
+    } catch (err: any) {
+      console.error("Token verification failed:", err.message || err);
+      return res
+        .status(401)
+        .json({ error: "Invalid or expired authentication token" });
     }
   } catch (error: any) {
     console.error("Authentication middleware error:", error);
