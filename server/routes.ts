@@ -1539,14 +1539,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-import { db } from "./db";
-import { users } from "@shared/schema";
-
-app.get("/api/db-health", async (_req, res) => {
-  try {
-    await db.select().from(users).limit(1);
-    res.json({ ok: true });
-  } catch (e: any) {
-    res.status(500).json({ ok: false, error: String(e?.message || e) });
-  }
-});
