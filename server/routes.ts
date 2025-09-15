@@ -225,9 +225,8 @@ async function ensureUser(
 
     if (!user) {
       // Check if user already exists by email (for development mode)
-      const existingUser = await storage.getAllUsers();
-      const userByEmail = existingUser.find(u => u.email === req.user!.email);
-      
+      const userByEmail = await storage.getUserByEmail(req.user!.email);
+
       if (userByEmail) {
         // User exists with this email, use the existing user
         user = userByEmail;
