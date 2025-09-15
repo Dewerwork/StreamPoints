@@ -22,7 +22,6 @@ import {
   adminRemovePointsSchema,
   adminSetPointsSchema,
   updateRedemptionStatusSchema,
-  users,
 } from "@shared/schema";
 import {
   initializeActionHandlers,
