@@ -1,5 +1,4 @@
-// server/db.ts (ESM-safe, DigitalOcean Postgres)
-
+// server/db.ts
 import pg from "pg";
 const { Pool } = pg;
 
@@ -13,13 +12,12 @@ if (!DATABASE_URL) {
 
 export const pool = new Pool({
   connectionString: DATABASE_URL,
-  // DO Managed PG uses TLS; keep this if your URL has ?sslmode=require
+  // DO Managed PG uses TLS; if your URL has ?sslmode=require keep ssl enabled:
   ssl: { rejectUnauthorized: false },
 });
 
 export const db = drizzle(pool, { schema });
 
-// (optional) helper to close cleanly on shutdown
 export async function closeDb() {
   await pool.end();
 }
