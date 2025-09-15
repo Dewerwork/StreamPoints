@@ -12,6 +12,7 @@ app.use(cors({
     'http://localhost:3000',
     'https://onepagemore.net',
     'https://stream-points-dewerwork.replit.app',
+    'https://streampoints-v2iyr.ondigitalocean.app',
     /\.replit\.app$/,
     /\.replit\.dev$/
   ],
