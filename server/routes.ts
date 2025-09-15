@@ -22,7 +22,6 @@ import {
   adminRemovePointsSchema,
   adminSetPointsSchema,
   updateRedemptionStatusSchema,
-  users,
 } from "@shared/schema";
 import {
   initializeActionHandlers,
@@ -137,14 +136,14 @@ async function authenticateToken(
           "Unknown User",
       };
       return next();
-    } catch (err: any) {
-      console.error("Token verification failed:", err.message);
+    } catch (err) {
+      console.error("Token verification failed:", (err as any).message);
       return res.status(401).json({
         error: "Invalid or expired authentication token",
-        code: err.code || "auth/invalid-token",
+        code: (err as any).code || "auth/invalid-token",
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Authentication middleware error:", error);
     res.status(500).json({ error: "Authentication service error" });
   }
@@ -164,10 +163,9 @@ async function ensureUser(
     let user = await storage.getUserByGoogleId(req.user.id);
 
     if (!user) {
-      // Check if user already exists by email (for development mode)
-      const existingUser = await storage.getAllUsers();
-      const userByEmail = existingUser.find(u => u.email === req.user!.email);
-      
+      // Check if user already exists by email
+      const userByEmail = await storage.getUserByEmail(req.user!.email);
+
       if (userByEmail) {
         // User exists with this email, use the existing user
         user = userByEmail;
@@ -1089,81 +1087,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(adminUsers);
       } catch (error) {
         res.status(500).json({ error: "Failed to get users" });
-      }
-    },
-  );
-
-  // Admin categories endpoint
-  app.get(
-    "/api/admin/categories",
-    authenticateToken,
-    ensureUser,
-    async (req: AuthenticatedRequest, res: Response) => {
-      try {
-        // Check admin access
-        const admin = await storage.getUser(req.user!.id);
-        if (!admin?.isAdmin) {
-          return res.status(403).json({ error: "Admin access required" });
-        }
-
-        const categories = await storage.getAllCategories();
-        res.json(categories);
-      } catch (error: any) {
-        console.error('Admin categories error:', error);
-        res.status(500).json({ error: 'Failed to fetch admin categories' });
-      }
-    },
-  );
-
-  // All rewards endpoint
-  app.get(
-    "/api/rewards/all",
-    authenticateToken,
-    ensureUser,
-    async (req: AuthenticatedRequest, res: Response) => {
-      try {
-        // Check admin access
-        const admin = await storage.getUser(req.user!.id);
-        if (!admin?.isAdmin) {
-          return res.status(403).json({ error: "Admin access required" });
-        }
-
-        const rewards = await storage.getAllRewards();
-        res.json(rewards);
-      } catch (error: any) {
-        console.error('All rewards error:', error);
-        res.status(500).json({ error: 'Failed to fetch all rewards' });
-      }
-    },
-  );
-
-  app.put(
-    "/api/admin/users/:userId/premium",
-    authenticateToken,
-    ensureUser,
-    async (req: AuthenticatedRequest, res: Response) => {
-      try {
-        // Check admin access
-        const admin = await storage.getUser(req.user!.id);
-        if (!admin?.isAdmin) {
-          return res.status(403).json({ error: "Admin access required" });
-        }
-
-        const { userId } = req.params;
-        const validatedData = updateUserPremiumSchema.parse(req.body);
-
-        const updatedUser = await storage.updateUserPremiumStatus(
-          userId,
-          validatedData.isPremium,
-        );
-        res.json(updatedUser);
-      } catch (error: any) {
-        if (error.name === "ZodError") {
-          return res
-            .status(400)
-            .json({ error: "Invalid request data", details: error.issues });
-        }
-        res.status(500).json({ error: "Failed to update user premium status" });
       }
     },
   );
