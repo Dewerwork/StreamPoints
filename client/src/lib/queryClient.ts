@@ -2,12 +2,11 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { auth } from "./firebase";
 
 function getApiUrl(url: string): string {
-  // Always use Replit domain for API calls in production
-  const isProduction = window.location.hostname !== 'localhost';
-  const apiBaseUrl = isProduction 
-    ? 'https://0fcf04b4-ca17-4bd2-9e9f-28767ae1dec3-00-3rzl653kiaiv1.janeway.replit.dev'
-    : '';
-  
+  // Allow overriding the API base URL via environment variable, defaulting
+  // to same-origin requests. This prevents hard-coding deployment specific
+  // domains and keeps the client flexible across environments.
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
   return `${apiBaseUrl}${url}`;
 }
 

@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import AdminPanel from "./components/AdminPanel";
 import TransactionHistory from "./pages/TransactionHistory";
-import type { Reward, RewardCategory } from "@shared/schema";
+import type { Reward, RewardCategory, User } from "@shared/schema";
 
 // Icon mapping for rewards
 const getRewardIcon = (title: string) => {
@@ -335,9 +335,9 @@ function Dashboard() {
                       </div>
                     </div>
                     <Avatar>
-                      <AvatarImage src={displayUser?.photoURL} alt={displayUser?.displayName} />
+                      <AvatarImage src={displayUser?.photoURL || undefined} alt={displayUser?.displayName || undefined} />
                       <AvatarFallback className="bg-purple-600 text-white" data-testid="avatar-fallback">
-                        {displayUser?.displayName?.split(' ').map(n => n[0]).join('') || 'U'}
+                        {displayUser?.displayName?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </div>
