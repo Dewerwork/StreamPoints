@@ -14,15 +14,16 @@ export interface IStorage {
   getUser(id: string, tx?: TransactionHandle): Promise<User | undefined>;
   getUserByGoogleId(googleId: string, tx?: TransactionHandle): Promise<User | undefined>;
   getUserByEmail(email: string, tx?: TransactionHandle): Promise<User | undefined>;
+  getUserByDisplayName(displayName: string, tx?: TransactionHandle): Promise<User | undefined>;
   createUser(user: InsertUser, tx?: TransactionHandle): Promise<User>;
   updateUserPoints(userId: string, points: number, tx?: TransactionHandle): Promise<void>;
-  
+
   // Atomic point operations
   adjustUserPoints(userId: string, adjustment: number, tx?: TransactionHandle): Promise<number>;
   debitPoints(userId: string, amount: number, tx?: TransactionHandle): Promise<{ success: boolean; newBalance: number; error?: string }>;
   creditPoints(userId: string, amount: number, tx?: TransactionHandle): Promise<number>;
   transferPointsAtomic(fromUserId: string, toUserId: string, amount: number, tx?: TransactionHandle): Promise<{ success: boolean; fromBalance: number; toBalance: number; error?: string }>;
-  
+
   // Reward management
   getAllRewards(tx?: TransactionHandle): Promise<Reward[]>;
   getActiveRewards(tx?: TransactionHandle): Promise<Reward[]>;
@@ -30,28 +31,28 @@ export interface IStorage {
   createReward(reward: InsertReward, tx?: TransactionHandle): Promise<Reward>;
   updateReward(id: string, reward: Partial<InsertReward>, tx?: TransactionHandle): Promise<Reward | undefined>;
   deleteReward(id: string, tx?: TransactionHandle): Promise<void>;
-  
+
   // Redemption management
   createRedemption(redemption: InsertRedemption, tx?: TransactionHandle): Promise<Redemption>;
   getUserRedemptions(userId: string, tx?: TransactionHandle): Promise<Redemption[]>;
   updateRedemptionStatus(id: string, status: string, tx?: TransactionHandle): Promise<void>;
-  
+
   // Point transaction management
   createPointTransaction(transaction: InsertPointTransaction, tx?: TransactionHandle): Promise<PointTransaction>;
   getUserPointHistory(userId: string, tx?: TransactionHandle): Promise<PointTransaction[]>;
-  
+
   // Category management
   getAllCategories(tx?: TransactionHandle): Promise<RewardCategory[]>;
   getCategory(id: string, tx?: TransactionHandle): Promise<RewardCategory | undefined>;
   createCategory(category: InsertRewardCategory, tx?: TransactionHandle): Promise<RewardCategory>;
   updateCategory(id: string, category: Partial<InsertRewardCategory>, tx?: TransactionHandle): Promise<RewardCategory | undefined>;
   deleteCategory(id: string, tx?: TransactionHandle): Promise<void>;
-  
+
   // Enhanced reward management
   getFilteredRewards(filters: RewardFilters, tx?: TransactionHandle): Promise<Reward[]>;
   getRewardsWithCategories(tx?: TransactionHandle): Promise<(Reward & { category?: RewardCategory })[]>;
   getRewardsForUser(isPremium: boolean, tx?: TransactionHandle): Promise<Reward[]>;
-  
+
   // User role management
   updateUserPremiumStatus(userId: string, isPremium: boolean, tx?: TransactionHandle): Promise<User | undefined>;
   updateUserAdminStatus(userId: string, isAdmin: boolean, tx?: TransactionHandle): Promise<User | undefined>;
@@ -59,13 +60,13 @@ export interface IStorage {
   updateUserPhotoURL(userId: string, photoURL: string, tx?: TransactionHandle): Promise<User | undefined>;
   getAllUsers(tx?: TransactionHandle): Promise<User[]>;
   getUsersLeaderboard(limit?: number, tx?: TransactionHandle): Promise<User[]>;
-  
+
   // External integration and admin point management
   bulkUpdateUserPoints(updates: { userId: string; pointsEarned: number; description: string }[], tx?: TransactionHandle): Promise<{ successful: number; failed: number; errors: string[] }>;
   adminGivePoints(userId: string, amount: number, description: string, adminId: string, tx?: TransactionHandle): Promise<User | undefined>;
   adminRemovePoints(userId: string, amount: number, description: string, adminId: string, tx?: TransactionHandle): Promise<User | undefined>;
   adminSetPoints(userId: string, amount: number, description: string, adminId: string, tx?: TransactionHandle): Promise<User | undefined>;
-  
+
   // Enhanced redemption management
   getPendingRedemptions(tx?: TransactionHandle): Promise<(Redemption & { user: User; reward: Reward })[]>;
   updateRedemptionStatusWithTimestamp(id: string, status: string, tx?: TransactionHandle): Promise<Redemption | undefined>;
@@ -94,10 +95,16 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByDisplayName(displayName: string, tx?: TransactionHandle): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.displayName === displayName,
+    );
+  }
+
   async createUser(insertUser: InsertUser, tx?: TransactionHandle): Promise<User> {
     const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
+    const user: User = {
+      ...insertUser,
       id,
       points: insertUser.points ?? 0,
       isAdmin: insertUser.isAdmin ?? false,
@@ -162,7 +169,7 @@ export class MemStorage implements IStorage {
         error: debitResult.error
       };
     }
-    
+
     try {
       const toBalance = await this.creditPoints(toUserId, amount, tx);
       return {
@@ -191,14 +198,14 @@ export class MemStorage implements IStorage {
 
   async createReward(reward: InsertReward, tx?: TransactionHandle): Promise<Reward> {
     const id = randomUUID();
-    return { 
-      ...reward, 
-      id, 
+    return {
+      ...reward,
+      id,
       isActive: reward.isActive ?? true,
       categoryId: reward.categoryId ?? null,
       tier: reward.tier ?? "common",
       availability: reward.availability ?? null,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
   }
 
@@ -216,8 +223,7 @@ export class MemStorage implements IStorage {
       ...redemption,
       id,
       status: redemption.status ?? "pending",
-      redeemedAt: new Date(),
-      processedAt: redemption.processedAt ?? null,
+      redeemedAt: new Date()
     };
   }
 

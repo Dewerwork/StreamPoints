@@ -142,7 +142,14 @@ export const adminSetPointsSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
 });
 
-// Redemption processing schemas  
+// Owner point management by display name
+export const ownerAddPointsByDisplayNameSchema = z.object({
+  displayName: z.string().min(1, "Display name is required").max(100, "Display name too long"),
+  amount: z.number().int().positive("Amount must be positive"),
+  description: z.string().min(1, "Description is required").max(500, "Description too long")
+});
+
+// Redemption processing schemas
 export const updateRedemptionStatusSchema = z.object({
   status: z.enum(["pending", "processed", "completed", "failed"])
 });
@@ -170,4 +177,5 @@ export type BulkPointUpdate = z.infer<typeof bulkPointUpdateSchema>;
 export type AdminGivePoints = z.infer<typeof adminGivePointsSchema>;
 export type AdminRemovePoints = z.infer<typeof adminRemovePointsSchema>;
 export type AdminSetPoints = z.infer<typeof adminSetPointsSchema>;
+export type OwnerAddPointsByDisplayName = z.infer<typeof ownerAddPointsByDisplayNameSchema>;
 export type UpdateRedemptionStatus = z.infer<typeof updateRedemptionStatusSchema>;

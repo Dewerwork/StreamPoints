@@ -21,6 +21,7 @@ import {
   adminGivePointsSchema,
   adminRemovePointsSchema,
   adminSetPointsSchema,
+  ownerAddPointsByDisplayNameSchema,
   updateRedemptionStatusSchema,
   users,
 } from "@shared/schema";
@@ -106,18 +107,18 @@ async function authenticateToken(
         console.warn(
           "Development mode: Firebase Admin not configured, attempting manual token decode",
         );
-        
+
         try {
           // Decode the JWT token manually (without verification for development)
           const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
+
           if (payload.email && payload.user_id) {
             console.log("Extracted user from token (no admin):", {
               uid: payload.user_id,
               email: payload.email,
               name: payload.name || payload.email
             });
-            
+
             req.user = {
               id: payload.user_id,
               email: payload.email,
@@ -128,7 +129,7 @@ async function authenticateToken(
         } catch (decodeError: any) {
           console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
         }
-        
+
         // Only fall back to dev user if token decode fails
         req.user = {
           id: "dev-user-123",
@@ -160,18 +161,18 @@ async function authenticateToken(
         console.warn(
           "Development mode: Firebase Admin token verification failed, attempting manual token decode",
         );
-        
+
         try {
           // Decode the JWT token manually (without verification for development)
           const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
+
           if (payload.email && payload.user_id) {
             console.log("Extracted user from token:", {
               uid: payload.user_id,
               email: payload.email,
               name: payload.name || payload.email
             });
-            
+
             req.user = {
               id: payload.user_id,
               email: payload.email,
@@ -182,7 +183,7 @@ async function authenticateToken(
         } catch (decodeError: any) {
           console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
         }
-        
+
         // Only fall back to dev user if token decode also fails
         req.user = {
           id: "dev-user-123",
@@ -220,7 +221,7 @@ async function ensureUser(
       // Check if user already exists by email (for development mode)
       const existingUser = await storage.getAllUsers();
       const userByEmail = existingUser.find(u => u.email === req.user!.email);
-      
+
       if (userByEmail) {
         // User exists with this email, use the existing user
         user = userByEmail;
@@ -1317,6 +1318,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ error: "Invalid request data", details: error.issues });
         }
         res.status(500).json({ error: "Failed to process bulk point updates" });
+      }
+    },
+  );
+
+  // Owner endpoint to add points by display name
+  app.post(
+    "/api/owner/add-points-by-display-name",
+    authenticateToken,
+    ensureUser,
+    async (req: AuthenticatedRequest, res: Response) => {
+      try {
+        // Check owner access
+        const owner = await storage.getUser(req.user!.id);
+        if (!owner?.isOwner) {
+          return res.status(403).json({ error: "Owner access required" });
+        }
+
+        const validatedData = ownerAddPointsByDisplayNameSchema.parse(req.body);
+
+        // Find user by display name
+        const targetUser = await storage.getUserByDisplayName(validatedData.displayName);
+        if (!targetUser) {
+          return res.status(404).json({
+            error: `User with display name "${validatedData.displayName}" not found`
+          });
+        }
+
+        // Add points to the user
+        const newBalance = await storage.adjustUserPoints(targetUser.id, validatedData.amount);
+
+        // Create point transaction record
+        await storage.createPointTransaction({
+          userId: targetUser.id,
+          amount: validatedData.amount,
+          type: "admin_added",
+          description: validatedData.description,
+        });
+
+        // Get updated user data
+        const updatedUser = await storage.getUser(targetUser.id);
+
+        res.json({
+          success: true,
+          user: updatedUser,
+          newBalance,
+          message: `Added ${validatedData.amount} points to ${targetUser.displayName}`,
+        });
+      } catch (error: any) {
+        if (error.name === "ZodError") {
+          return res
+            .status(400)
+            .json({ error: "Invalid request data", details: error.issues });
+        }
+        console.error("Failed to add points by display name:", error);
+        res.status(500).json({ error: "Failed to add points" });
       }
     },
   );

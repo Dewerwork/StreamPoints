@@ -29,6 +29,12 @@ export class PostgreSQLStorage implements IStorage {
     return result[0];
   }
 
+  async getUserByDisplayName(displayName: string, tx?: TransactionHandle): Promise<User | undefined> {
+    const dbInstance = tx || db;
+    const result = await dbInstance.select().from(users).where(eq(users.displayName, displayName)).limit(1);
+    return result[0];
+  }
+
   async createUser(user: InsertUser, tx?: TransactionHandle): Promise<User> {
     const dbInstance = tx || db;
     const result = await dbInstance.insert(users).values(user).returning();
