@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { auth, signInWithGoogle, signOutUser } from "./firebase";
+import { apiRequest } from "./queryClient";
 
 interface AuthUser {
   id: string;
@@ -61,22 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchOrCreateUser = async (firebaseUser: User): Promise<AuthUser> => {
     try {
-      // Get the Firebase ID token
-      const idToken = await firebaseUser.getIdToken();
-      
-      // Call our backend API with the token (same origin)
-      const response = await fetch('/api/user/profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
-      }
-
+      // Use the shared API request helper to ensure consistent
+      // authentication headers and API base URL across environments.
+      const response = await apiRequest('GET', '/api/user/profile');
       const userData = await response.json();
       
       return {

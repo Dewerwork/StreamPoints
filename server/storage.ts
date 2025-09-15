@@ -212,11 +212,12 @@ export class MemStorage implements IStorage {
 
   async createRedemption(redemption: InsertRedemption, tx?: TransactionHandle): Promise<Redemption> {
     const id = randomUUID();
-    return { 
-      ...redemption, 
-      id, 
+    return {
+      ...redemption,
+      id,
       status: redemption.status ?? "pending",
-      redeemedAt: new Date() 
+      redeemedAt: new Date(),
+      processedAt: redemption.processedAt ?? null,
     };
   }
 
