@@ -30,6 +30,14 @@ import {
   validateActionConfig,
   actionRegistry,
 } from "./actions/init";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+// Remote JWKS for verifying Firebase ID tokens without Admin SDK
+const firebaseJWKS = createRemoteJWKSet(
+  new URL(
+    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
+  ),
+);
 
 // Initialize Firebase Admin
 let adminAuth: any = null;
@@ -62,12 +70,12 @@ async function initializeFirebaseAdmin() {
       console.log("Firebase Admin initialized successfully");
     } else {
       console.warn(
-        "Firebase Admin environment variables not found. Authentication will be bypassed in development.",
+        "Firebase Admin environment variables not found. Using JWKS verification instead.",
       );
     }
   } catch (error) {
     console.error("Failed to initialize Firebase Admin:", error);
-    console.warn("Authentication will be bypassed in development.");
+    console.warn("Using JWKS verification instead.");
   }
 }
 
@@ -81,9 +89,6 @@ interface AuthenticatedRequest extends Request {
     displayName: string;
   };
 }
-
-// Check if we're in development environment
-const isDevelopment = process.env.NODE_ENV !== "production";
 
 // Middleware to authenticate Firebase ID tokens
 async function authenticateToken(
@@ -101,100 +106,42 @@ async function authenticateToken(
 
     const token = authHeader.substring(7);
 
-    if (!adminAuth) {
-      if (isDevelopment) {
-        console.warn(
-          "Development mode: Firebase Admin not configured, attempting manual token decode",
-        );
-        
-        try {
-          // Decode the JWT token manually (without verification for development)
-          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
-          if (payload.email && payload.user_id) {
-            console.log("Extracted user from token (no admin):", {
-              uid: payload.user_id,
-              email: payload.email,
-              name: payload.name || payload.email
-            });
-            
-            req.user = {
-              id: payload.user_id,
-              email: payload.email,
-              displayName: payload.name || payload.email.split('@')[0],
-            };
-            return next();
-          }
-        } catch (decodeError: any) {
-          console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
-        }
-        
-        // Only fall back to dev user if token decode fails
+    try {
+      if (adminAuth) {
+        const decoded = await adminAuth.verifyIdToken(token, true);
         req.user = {
-          id: "dev-user-123",
-          email: "dev@example.com",
-          displayName: "Dev User",
+          id: decoded.uid,
+          email: decoded.email || "",
+          displayName: decoded.name || "Unknown User",
         };
         return next();
-      } else {
+      }
+
+      const projectId = process.env.FIREBASE_PROJECT_ID;
+      if (!projectId) {
         return res
-          .status(500)
+          .status(503)
           .json({ error: "Authentication service unavailable" });
       }
-    }
 
-    try {
-      const decodedToken = await adminAuth.verifyIdToken(token, true); // checkRevoked = true
+      const { payload } = await jwtVerify(token, firebaseJWKS, {
+        issuer: `https://securetoken.google.com/${projectId}`,
+        audience: projectId,
+      });
+
       req.user = {
-        id: decodedToken.uid,
-        email: decodedToken.email || "",
-        displayName: decodedToken.name || "Unknown User",
+        id: String(payload.user_id),
+        email: String(payload.email || ""),
+        displayName:
+          String(payload.name || payload.email || "").split("@")[0] ||
+          "Unknown User",
       };
-
-      next();
-    } catch (tokenError: any) {
-      console.error("Token verification failed:", tokenError.message);
-
-      // In development, try to decode the token manually to extract user info
-      if (isDevelopment) {
-        console.warn(
-          "Development mode: Firebase Admin token verification failed, attempting manual token decode",
-        );
-        
-        try {
-          // Decode the JWT token manually (without verification for development)
-          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-          
-          if (payload.email && payload.user_id) {
-            console.log("Extracted user from token:", {
-              uid: payload.user_id,
-              email: payload.email,
-              name: payload.name || payload.email
-            });
-            
-            req.user = {
-              id: payload.user_id,
-              email: payload.email,
-              displayName: payload.name || payload.email.split('@')[0],
-            };
-            return next();
-          }
-        } catch (decodeError: any) {
-          console.warn("Failed to decode token manually, using dev bypass:", decodeError.message);
-        }
-        
-        // Only fall back to dev user if token decode also fails
-        req.user = {
-          id: "dev-user-123",
-          email: "dev@example.com",
-          displayName: "Dev User",
-        };
-        return next();
-      }
-
+      return next();
+    } catch (err: any) {
+      console.error("Token verification failed:", err.message);
       return res.status(401).json({
         error: "Invalid or expired authentication token",
-        code: tokenError.code || "auth/invalid-token",
+        code: err.code || "auth/invalid-token",
       });
     }
   } catch (error: any) {
