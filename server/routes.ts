@@ -61,12 +61,12 @@ async function initializeFirebaseAdmin() {
       console.log("Firebase Admin initialized successfully");
     } else {
       console.warn(
-        "Firebase Admin environment variables not found. Authentication will be bypassed in development.",
+        "Firebase Admin environment variables not found. Authentication will be bypassed if ALLOW_INSECURE_AUTH is enabled.",
       );
     }
   } catch (error) {
     console.error("Failed to initialize Firebase Admin:", error);
-    console.warn("Authentication will be bypassed in development.");
+    console.warn("Authentication will be bypassed if ALLOW_INSECURE_AUTH is enabled.");
   }
 }
 
@@ -81,8 +81,8 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-// Check if we're in development environment
-const isDevelopment = process.env.NODE_ENV !== "production";
+// Flag to explicitly allow insecure authentication for development/testing
+const allowInsecureAuth = process.env.ALLOW_INSECURE_AUTH === "true";
 
 // Middleware to authenticate Firebase ID tokens
 async function authenticateToken(
@@ -133,8 +133,8 @@ async function authenticateToken(
         );
       }
 
-      if (isDevelopment) {
-        // In development environments, fall back to a hard-coded user if manual
+      if (allowInsecureAuth) {
+        // When insecure auth is allowed, fall back to a hard-coded user if manual
         // decoding fails so the application can still run.
         req.user = {
           id: "dev-user-123",
@@ -188,8 +188,8 @@ async function authenticateToken(
         );
       }
 
-      if (isDevelopment) {
-        // Only fall back to a dummy user in development environments.
+      if (allowInsecureAuth) {
+        // Only fall back to a dummy user when insecure auth is explicitly allowed.
         req.user = {
           id: "dev-user-123",
           email: "dev@example.com",
@@ -223,6 +223,7 @@ async function ensureUser(
     let user = await storage.getUserByGoogleId(req.user.id);
 
     if (!user) {
+
       // Check if user already exists by email (for development mode)
       const userByEmail = await storage.getUserByEmail(req.user!.email);
 
