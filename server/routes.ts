@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { storage } from "./storage";
 import { db } from "./db";
 import {
@@ -100,12 +101,9 @@ async function authenticateToken(
 
     const token = authHeader.substring(7);
 
-    if (!adminAuth) {
-      console.warn(
-        "Firebase Admin not configured, attempting manual token decode",
-      );
-
+    if (adminAuth) {
       try {
+
         // Decode the JWT token manually. This does NOT verify the signature but
         // allows basic identification when Firebase Admin isn't available.
         const payload = JSON.parse(
@@ -136,25 +134,41 @@ async function authenticateToken(
       if (allowInsecureAuth) {
         // When insecure auth is allowed, fall back to a hard-coded user if manual
         // decoding fails so the application can still run.
+        
         req.user = {
-          id: "dev-user-123",
-          email: "dev@example.com",
-          displayName: "Dev User",
+          id: decodedToken.uid,
+          email: decodedToken.email || "",
+          displayName: decodedToken.name || "Unknown User",
         };
-        return next();
-      }
 
+        return next();
+      } catch (tokenError: any) {
+        console.error("Token verification failed:", tokenError.message);
+        return res
+          .status(401)
+          .json({ error: "Invalid or expired authentication token" });
+      }
+    }
+
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    if (!projectId) {
       return res
         .status(503)
-        .json({ error: "Authentication service unavailable" });
+        .json({ error: "FIREBASE_PROJECT_ID not configured" });
     }
 
     try {
-      const decodedToken = await adminAuth.verifyIdToken(token, true); // checkRevoked = true
+      const { payload } = await jwtVerify(token, JWKS, {
+        issuer: `https://securetoken.google.com/${projectId}`,
+        audience: projectId,
+      });
+
       req.user = {
-        id: decodedToken.uid,
-        email: decodedToken.email || "",
-        displayName: decodedToken.name || "Unknown User",
+        id: payload.user_id as string,
+        email: (payload.email as string) || "",
+        displayName:
+          (payload.name as string) ||
+          ((payload.email as string)?.split("@")[0] ?? "Unknown User"),
       };
 
       next();
@@ -202,6 +216,7 @@ async function authenticateToken(
         error: "Invalid or expired authentication token",
         code: tokenError.code || "auth/invalid-token",
       });
+
     }
   } catch (error: any) {
     console.error("Authentication middleware error:", error);
